@@ -15,18 +15,19 @@ class MoviesController < ApplicationController
       ordering,@date_header = {:order => :release_date}, 'hilite'
     end
     @all_ratings = Movie.all_ratings
-    @selected_ratings = params[:ratings] || session[:ratings] || {}
+    @selected_ratings = params[:ratings] || session[:ratings] || nil
 
     if params[:sort] != session[:sort]
       session[:sort] = sort
       redirect_to :sort => sort, :ratings => @selected_ratings and return
     end
 
-    if params[:ratings] != session[:ratings] and @selected_ratings != {}
+    if params[:ratings] != session[:ratings] and @selected_ratings != nil
       session[:sort] = sort
       session[:ratings] = @selected_ratings
       redirect_to :sort => sort, :ratings => @selected_ratings and return
     end
+    @selected_ratings = @selected_ratings || {}
     @movies = Movie.find_all_by_rating(@selected_ratings.keys, ordering)
   end
 
@@ -38,6 +39,15 @@ class MoviesController < ApplicationController
     @movie = Movie.create!(params[:movie])
     flash[:notice] = "#{@movie.title} was successfully created."
     redirect_to movies_path
+  end
+
+  def similar
+    @movie = Movie.find params[:id]
+    @movies =  Movie.where('director =? AND id !=?',@movie.director, params[:id])
+    if(@movie.director =='')
+      flash[:notice] = "'#{@movie.title}' has no director info"
+      redirect_to movies_path
+    end
   end
 
   def edit
